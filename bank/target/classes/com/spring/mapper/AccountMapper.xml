@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.spring.mapper.AccountMapper">
+	
+	<select id="checkUser">
+		select count(*) from accountuser where username=#{username}
+	</select>
+	<insert id="registUser">
+		INSERT INTO accountuser(username,name,email,password)
+		VALUES(#{username},#{name} , #{email} ,#{password})
+	</insert>
+	<insert id="registAccount">
+		INSERT INTO account(username)
+		VALUES(#{username})
+	</insert>
+	<select id="management">
+		select * from account where username=#{username}
+	</select>
+	<select id="login">
+		select count(*) from accountuser where username=#{username} and password=#{password}
+	</select>
+	<select id="checkTransferNo" resultType="java.lang.String">
+		select username from account where accountNo=#{accountNo}
+	</select>
+	<select id="checkName" resultType="java.lang.String">
+		select name from accountuser where username=#{username}
+	</select>
+	<select id="getBalance" resultType="java.lang.Integer">
+		select balance from account where accountNo=#{accountNo}
+	</select>
+	<update id="insert"><!-- 입금 -->
+		update account set balance=balance+#{value} where accountNo = #{accountNo}
+	</update>
+	<update id="withdraw"><!-- 출금 -->
+		update account set balance=balance-#{value}-#{charge} where accountNo = #{accountNo}
+	</update>
+	<update id="saving"><!-- 예적금 -->
+		update account set balance=balance-#{value} where accountNo = #{accountNo}
+	</update>
+	<insert id="recordInsert">
+		INSERT INTO record(accountNo,type,balance,value,doDate,principal)
+		VALUES(#{accountNo},#{type},#{balance},#{value},sysdate,#{principal})
+	</insert>
+	<insert id="recordWiThdraw">
+		INSERT INTO record(accountNo,type,balance,value,doDate,charge)
+		VALUES(#{accountNo},#{type},#{balance},#{value},sysdate,#{charge})
+	</insert>
+	<insert id="recordTransfer">
+		INSERT INTO record(accountNo,toName,type,balance,value,doDate,charge,transferNo)
+		VALUES(#{accountNo},#{toName},#{type},#{balance},#{value},sysdate,#{charge},#{transferNo})
+	</insert>
+	<insert id="recordReceive">
+		INSERT INTO record(accountNo,fromName,type,balance,value,doDate,charge,transferNo)
+		VALUES(#{accountNo},#{fromName},#{type},#{balance},#{value},sysdate,#{charge},#{transferNo})
+	</insert>
+	<select id="recordList">
+		select * from record where accountNo=#{accountNo} ORDER BY doDate desc
+	</select>
+	<insert id="insertSaving">
+		INSERT INTO saving(accountNo,type,savingDate,updateDate,balance,period,expireDate,savingNo,principal)
+		VALUES(#{accountNo},#{type},sysdate,sysdate,#{balance},#{period},#{expireDate},savingNo_seq.NEXTVAL,#{balance})
+	</insert>
+	<select id="savingList">
+		select * from saving
+	</select>
+	<update id="updateDeposit"><!-- 예금 -->
+		<![CDATA[
+			update saving 
+			set updateDate = SYSTIMESTAMP, interest = interest+(balance/100*20)	
+			where type = 'deposit' and updateDate + interval '1' minute <= SYSTIMESTAMP
+		]]>
+	</update>
+	<update id="updateSaving"><!-- 적금 -->
+		<![CDATA[
+			update saving 
+			set updateDate = SYSTIMESTAMP, balance = balance+(balance/100*7)	
+			where type = 'saving' and updateDate + interval '2' minute <= SYSTIMESTAMP
+		]]>
+	</update>
+	<select id="getAccount">
+		select * from account where accountNo=#{accountNo}
+	</select>
+	<update id="updateBalance"><!-- 예금만료 -->
+		update account set balance = #{balance}	where accountNo=#{accountNo}
+	</update>
+	<delete id="expirationSaving"><!-- 예금만료 -->
+		delete from saving where savingNo=#{savingNo}
+	</delete>
+	<select id="savingListAccount">
+		select * from saving where accountNo=#{accountNo}
+	</select>
+	<!-- 예적금 해지 -->
+	<select id="getAccountSavingNo">
+		select * from saving where savingNo=#{savingNo}
+	</select>
+	<update id="updateSavingPrincipal" >
+		update account set balance = balance+#{principal} where accountNo=#{accountNo}
+	</update>
+	
+</mapper> 
